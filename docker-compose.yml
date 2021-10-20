@@ -12,6 +12,8 @@ services:
       - "80:80"
       - "443:443"
     command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+    networks:
+      - elk
   certbot:
     image: certbot/certbot
     restart: unless-stopped
@@ -19,3 +21,27 @@ services:
       - ./data/certbot/conf:/etc/letsencrypt
       - ./data/certbot/www:/var/www/certbot
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+  postgres:
+    image: postgres:latest
+    container_name: avalon_postgresql
+    restart: always
+    environment:
+      TZ: PRC
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123456
+    ports:
+      - 5432:5432
+    networks:
+      - elk
+  avalon-server:
+    image: toursslivers/avalon-server:latest
+    container_name: avalon_server
+    restart: always
+    ports:
+      - 3000:3000
+    networks:
+      - elk
+networks:
+  elk:
+    driver: bridge
